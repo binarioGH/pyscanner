@@ -23,9 +23,29 @@ def h():
 	print("{} -p 21 -i 192.168.0.1 (Se analiza el puerto 21 de 192.168.0.1)".format(argv[0]))
 	print("-min y -max es para poner un rango de puertos a analizar.")
 	print("Por ejemplo: {} -min 21 -max 30 -i 192.168.0.1\nEn ese caso se analizaría del puerto 21 al 30.".format(argv[0]))
+	print("-vb: Activar el modo de analisis de vulnerabildiades.")
+	print("-vbl: Añadir una lista de banners vulnerables.")
 	exit()
+def scannbanner(banners, vblist):
+	try:
+		vbfile = open(vblist, "r")
+	except:
+		try:
+			vbfile = open("vb.txt", "r")
+		except:
+			print("No se ha podido abrir ninguna lista de vulnerabildiades.")
+			exit()
+	print("Se ha empezado el análisis de vulnerabildiades.")
+	for banner in banners:
+	    for b in vbfile:
+	        if b.strip("\n") in banner.strip("\n"):
+	        	print("\nSe ha encontrado una vulnerabilidad: {}\n".format(b.strip("\n")))
+	        	break
+	print("El análisis de vulnerabilidad ha acabado.")
+	vbfile.close()
 
 def scann(ip, ports): 
+	vbanners = []
 	print("Iniciando el análisis de puertos...\n\n")
 	for port in ports:
 		sock = socket(AF_INET, SOCK_STREAM)
@@ -33,9 +53,15 @@ def scann(ip, ports):
 		if (sock.connect_ex((ip, port)) == 0 ):
 			print("\n[+]El puerto {} está abierto.\n".format(port))
 			try:
-				print("Banner: {}\n".format(sock.recv(1024).strip("\n")))
+				banner = sock.recv(1024).decode()
+				print("Banner: {}\n".format(banner))
 			except:
 				continue
+			else:
+				vbanners.append(banner.strip("\n"))
+		sock.close()
+	return vbanners
+
 	print("Se ha terminado el análisis de puertos.")
 
 if __name__ == '__main__':
@@ -50,6 +76,8 @@ if __name__ == '__main__':
 		argvcount = -1
 		ports = []
 		ip = str()
+		vbnner = False
+		vbl = ""
 		for arg in argv:
 			argvcount += 1
 			if arg[0] != "-":
@@ -64,11 +92,17 @@ if __name__ == '__main__':
 				ports.append(int(argv[argvcount + 1]))
 			elif arg == "-i":
 				ip = argv[argvcount + 1]
+			elif arg == "-vb":
+				vbnner = True
+			elif arg == "-vbl":
+				vbl = argv[argvcount + 1]
 			else:
 				print(msghelp)
 				exit()
-		print("{} {} {} {}".format(ports, mn, mx, ip))
 		for num in range(mn, mx + 1):
 			ports.append(num)
-		print(ports)
-		scann(ip, ports)
+		banners = scann(ip, ports)
+		if vbnner == True:
+			scannbanner(banners, vbl)
+
+
