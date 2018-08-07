@@ -25,6 +25,7 @@ def h():
 	print("Por ejemplo: {} -min 21 -max 30 -i 192.168.0.1\nEn ese caso se analizaría del puerto 21 al 30.".format(argv[0]))
 	print("-vb: Activar el modo de analisis de vulnerabildiades.")
 	print("-vbl: Añadir una lista de banners vulnerables.")
+	print("-t: Establecer el timeout.")
 	exit()
 def scannbanner(banners, vblist):
 	try:
@@ -35,21 +36,24 @@ def scannbanner(banners, vblist):
 		except:
 			print("No se ha podido abrir ninguna lista de vulnerabildiades.")
 			exit()
+	vulns = vbfile.readlines()
+	vbfile.close()
 	print("Se ha empezado el análisis de vulnerabildiades.")
 	for banner in banners:
-	    for b in vbfile:
+	    for b in vulns:
 	        if b.strip("\n") in banner.strip("\n"):
 	        	print("\nSe ha encontrado una vulnerabilidad: {}\n".format(b.strip("\n")))
+	        	vulns.remove(b)
 	        	break
 	print("El análisis de vulnerabilidad ha acabado.")
-	vbfile.close()
+	
 
-def scann(ip, ports): 
+def scann(ip, ports, timeout): 
 	vbanners = []
 	print("Iniciando el análisis de puertos...\n\n")
 	for port in ports:
 		sock = socket(AF_INET, SOCK_STREAM)
-		sock.settimeout(3)
+		sock.settimeout(timeout)
 		if (sock.connect_ex((ip, port)) == 0 ):
 			print("\n[+]El puerto {} está abierto.\n".format(port))
 			try:
@@ -73,6 +77,7 @@ if __name__ == '__main__':
 	else:
 		mn = 0
 		mx = 0
+		timeout = 5
 		argvcount = -1
 		ports = []
 		ip = str()
@@ -96,13 +101,16 @@ if __name__ == '__main__':
 				vbnner = True
 			elif arg == "-vbl":
 				vbl = argv[argvcount + 1]
+			elif arg == "-t":
+				try:
+					timeout = int(argv[argvcount + 1])
+				except:
+					timeout = 5
 			else:
 				print(msghelp)
 				exit()
 		for num in range(mn, mx + 1):
 			ports.append(num)
-		banners = scann(ip, ports)
+		banners = scann(ip, ports, timeout)
 		if vbnner == True:
 			scannbanner(banners, vbl)
-
-
