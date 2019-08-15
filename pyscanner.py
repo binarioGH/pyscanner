@@ -3,6 +3,7 @@
 from socket import *
 from sys import argv
 from optparse import OptionParser as opt
+from os import path
 
 def banner():
 	print('''          
@@ -19,27 +20,21 @@ def banner():
         GitHub: https://github.com/binarioGH
 		''')
 
-
-def scannbanner(banners, vblist):
-	try:
-		vbfile = open(vblist, "r")
-	except:
-		try:
-			vbfile = open("vb.txt", "r")
-		except:
-			print("No se ha podido abrir ninguna lista de vulnerabildiades.")
-			exit()
-	vulns = vbfile.readlines()
-	vbfile.close()
-	print("Se ha empezado el análisis de vulnerabildiades.")
+def scanbanners(banners, file):
+	print("Iniciando analisis de banners.")
+	if not path.isfile(file):
+		print("El archivo {} no fue encontrado.".format(file))
+		exit()
+	else:
+		print("Archivo de banners vulnerables encontrados...")
+		with open(file, "r") as vfile:
+			vbanners = vfile.read()
+		vbanners = vbanners.split()
 	for banner in banners:
-	    for b in vulns:
-	        if b.strip("\n") in banner.strip("\n"):
-	        	print("\nSe ha encontrado una vulnerabilidad: {}\n".format(b.strip("\n")))
-	        	vulns.remove(b)
-	        	break
-	print("El análisis de vulnerabilidad ha acabado.")
-	
+		for vbanner in vbanners:
+			if vbanner.strip() in banner:
+				print("[+]Banner vulnerable: {}".format(banner))
+				vbanners.remove(vbanner)				
 
 def scann(ip, ports, timeout): 
 	vbanners = []
@@ -55,7 +50,7 @@ def scann(ip, ports, timeout):
 			except:
 				continue
 			else:
-				vbanners.append(banner.strip("\n"))
+				vbanners.append(banner.strip())
 		sock.close()
 	return vbanners
 
@@ -80,4 +75,4 @@ if __name__ == '__main__':
 
 	banners = scann(o.ip, ports, o.timeout)
 	if o.vulns:
-		scannbanner(banners, o.vfile)
+		scanbanners(banners, o.vfile)
