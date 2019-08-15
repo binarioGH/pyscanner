@@ -1,3 +1,4 @@
+distcc v1
 220 (vsFTPd 2.3.4)
 SAMBAR
 PSO Proxy 0.9

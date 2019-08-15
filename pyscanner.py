@@ -2,6 +2,8 @@
 #-*-coding: utf-8 -*-
 from socket import *
 from sys import argv
+from optparse import OptionParser as opt
+
 def banner():
 	print('''          
          ___________     ___________
@@ -17,16 +19,7 @@ def banner():
         GitHub: https://github.com/binarioGH
 		''')
 
-def h():
-	print("Usos:\n-i: Declarar la ip que se va a analizar.")
-	print("-p: Agregar un puerto el que a la lista de analizar.")
-	print("{} -p 21 -i 192.168.0.1 (Se analiza el puerto 21 de 192.168.0.1)".format(argv[0]))
-	print("-min y -max es para poner un rango de puertos a analizar.")
-	print("Por ejemplo: {} -min 21 -max 30 -i 192.168.0.1\nEn ese caso se analizaría del puerto 21 al 30.".format(argv[0]))
-	print("-vb: Activar el modo de analisis de vulnerabildiades.")
-	print("-vbl: Añadir una lista de banners vulnerables.")
-	print("-t: Establecer el timeout.")
-	exit()
+
 def scannbanner(banners, vblist):
 	try:
 		vbfile = open(vblist, "r")
@@ -70,47 +63,21 @@ def scann(ip, ports, timeout):
 
 if __name__ == '__main__':
 	banner()
-	msghelp = "Usa {} -h para ver las opciones.".format(argv[0])
-	if "-min" and "-max" and "-p" and "-h" and "-i" not in argv:
-		print(msghelp)
-		exit()
-	else:
-		mn = 0
-		mx = 0
-		timeout = 5
-		argvcount = -1
-		ports = []
-		ip = str()
-		vbnner = False
-		vbl = ""
-		for arg in argv:
-			argvcount += 1
-			if arg[0] != "-":
-				continue
-			elif arg == "-h":
-				h()
-			elif arg == "-min":
-				mn = int(argv[argvcount + 1])
-			elif arg == "-max":
-				mx = int(argv[argvcount + 1])
-			elif arg == "-p":
-				ports.append(int(argv[argvcount + 1]))
-			elif arg == "-i":
-				ip = argv[argvcount + 1]
-			elif arg == "-vb":
-				vbnner = True
-			elif arg == "-vbl":
-				vbl = argv[argvcount + 1]
-			elif arg == "-t":
-				try:
-					timeout = int(argv[argvcount + 1])
-				except:
-					timeout = 5
-			else:
-				print(msghelp)
-				exit()
-		for num in range(mn, mx + 1):
-			ports.append(num)
-		banners = scann(ip, ports, timeout)
-		if vbnner == True:
-			scannbanner(banners, vbl)
+	op = opt("Uso: %prog [banderas] [valores]")
+	op.add_option("-i", "--ip", dest="ip", default="none",help="Declarar la ip que se desea analizar.");
+	op.add_option("-p", "--port", dest="port", default=-1, type="int",help="Añadir un puerto a la lista de puertos a analizar.")
+	op.add_option("-m", "--min", dest="minimo", default=1, type="int", help="Escoger el puerto donde se empezará a analizar.")
+	op.add_option("-x", "--max", dest="maximo", default=25, type="int",help="Escoger el puerto donde se acabará de analizar.")
+	op.add_option("-v", "--vulbanner", dest="vulns", action="store_true", default=False, help="Activar el modo de analizar vulnerabilidades.")
+	op.add_option("-f", "--vulnfile", dest="vfile", default="vb.txt", help="Declarar el archivo con banners vulnerables.")
+	op.add_option("-t", "--timeout", dest="timeout", default=5, type="int",help="Declarar el tiempo de espera de un puerto [por default es 5 segundos].")
+	(o, argv) = op.parse_args()
+	ports = []
+	if not o.port == -1:
+		ports.append(o.port)
+	for num in range(o.minimo, o.maximo+1):
+		ports.append(num)
+
+	banners = scann(o.ip, ports, o.timeout)
+	if o.vulns:
+		scannbanner(banners, o.vfile)
